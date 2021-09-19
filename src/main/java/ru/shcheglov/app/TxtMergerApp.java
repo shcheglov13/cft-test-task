@@ -13,7 +13,7 @@ import ru.shcheglov.app.fileprocessor.MergeProcessor;
         version = "TxtMerger 1.0",
         description = "TxtMerger is a small command line application that allow sort and merge txt files",
         footer = "Created by Stanislav Shcheglov for CFT Shift")
-public class TxtMergerApp extends ConsoleAttributes implements Callable<Integer> {
+public final class TxtMergerApp extends ConsoleAttributes implements Callable<Integer> {
     public static void main(String... args) {
         System.exit(runConsole(args));
     }
@@ -23,10 +23,15 @@ public class TxtMergerApp extends ConsoleAttributes implements Callable<Integer>
     }
 
     @Override
-    public Integer call() throws IOException {
-        MergeProcessor<?> processor = isIntegerType() ?
-                new MergeProcessor<>(this, Integer.class) : new MergeProcessor<>(this, String.class);
-        processor.merge();
+    public Integer call() {
+        try {
+            MergeProcessor<?> processor = isIntegerType() ?
+                    new MergeProcessor<>(this, Integer.class) : new MergeProcessor<>(this, String.class);
+            processor.merge();
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        }
         return 0;
     }
 }

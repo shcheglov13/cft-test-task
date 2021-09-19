@@ -1,6 +1,7 @@
 package ru.shcheglov.app.fileprocessor;
 
 import ru.shcheglov.app.TxtMergerApp;
+import ru.shcheglov.app.exceptions.BlankFileException;
 import ru.shcheglov.app.util.DataValidator;
 import ru.shcheglov.app.util.Utils;
 
@@ -14,10 +15,10 @@ public class MergeProcessor<T extends Comparable<T>> {
     private final DataValidator<T> validator;
     private final Class<T> elementsClass;
 
-    public MergeProcessor(TxtMergerApp app, Class<T> elementsClass) {
+    public MergeProcessor(TxtMergerApp app, Class<T> elementsClass) throws IOException {
         this.elementsClass = elementsClass;
         this.readers = new ArrayList<>(app.getInputFiles().length);
-        this.comparator = app.isDescending() ? (o1, o2) -> -o1.compareTo(o2) : Comparator.naturalOrder();
+        this.comparator = app.isDescending() ? Comparator.reverseOrder() : Comparator.naturalOrder();
         this.validator = new DataValidator<>(comparator, elementsClass);
 
         try {
@@ -29,10 +30,15 @@ public class MergeProcessor<T extends Comparable<T>> {
 
         for (File file : app.getInputFiles()) {
             try {
-                readers.add(new BufferedReader(new FileReader(file)));
+                BufferedReader reader = new BufferedReader(new FileReader(file));
+                if (validator.isNotBlankFile(reader)) {
+                    readers.add(new BufferedReader(new FileReader(file)));
+                }
             } catch (FileNotFoundException e) {
                 System.err.printf("Файл %s не найден! Программа остановлена...%n", file.getPath());
                 System.exit(1);
+            } catch (BlankFileException e) {
+                System.err.printf("Файл %s не содержит данных и будет исключен из обработки%n", file.getPath());
             }
         }
     }
@@ -53,11 +59,12 @@ public class MergeProcessor<T extends Comparable<T>> {
                 prevElements.set(indexOfWrittenElement, currentElements.get(indexOfWrittenElement));
                 currentElements.set(indexOfWrittenElement,
                         getElement(readers.get(indexOfWrittenElement), prevElements.get(indexOfWrittenElement)));
+
+                if (currentElements.get(indexOfWrittenElement) == null) {
+                    removeElementFromListsAndCloseReader(prevElements, currentElements, indexOfWrittenElement);
+                }
             } else {
-                currentElements.remove(indexOfWrittenElement);
-                prevElements.remove(indexOfWrittenElement);
-                readers.get(indexOfWrittenElement).close();
-                readers.remove(indexOfWrittenElement);
+                removeElementFromListsAndCloseReader(prevElements, currentElements, indexOfWrittenElement);
             }
         }
 
@@ -84,27 +91,34 @@ public class MergeProcessor<T extends Comparable<T>> {
         return listOfElements.indexOf(element);
     }
 
-
     private T getElement(BufferedReader reader, T prevElement) throws IOException {
+        String line = reader.readLine();
+
         if (elementsClass == Integer.class) {
-            String line = reader.readLine();
-            boolean isSorted;
+            boolean isValid;
+            while (!(isValid = validator.isValidElement(prevElement, line)) && reader.ready()) {
+                line = reader.readLine();
+            }
 
-            do {
-                while (reader.ready() && !validator.IsIntegerElement(line)) {
-                    line = reader.readLine();
-                }
-
-                isSorted = validator.isSorted(prevElement, elementsClass.cast(Integer.valueOf(line)));
-
-                if (!isSorted && reader.ready()) {
-                    line = reader.readLine();
-                }
-            } while (!isSorted);
+            if (!isValid && !reader.ready()) {
+                return null;
+            }
 
             return elementsClass.cast(Integer.valueOf(line));
         }
 
+        while (!validator.isValidElement(prevElement, line)) {
+            line = reader.readLine();
+        }
+
         return elementsClass.cast(reader.readLine());
+    }
+
+    private void removeElementFromListsAndCloseReader(List<T> prevElements, List<T> currentElements, int index)
+            throws IOException {
+        currentElements.remove(index);
+        prevElements.remove(index);
+        readers.get(index).close();
+        readers.remove(index);
     }
 }
