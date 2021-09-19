@@ -2,7 +2,10 @@ package ru.shcheglov.app;
 
 import picocli.CommandLine;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 import picocli.CommandLine.Command;
@@ -26,12 +29,14 @@ public final class TxtMergerApp extends ConsoleAttributes implements Callable<In
     public Integer call() {
         try {
             MergeProcessor<?> processor = isIntegerType() ?
-                    new MergeProcessor<>(this, Integer.class) : new MergeProcessor<>(this, String.class);
+                    new MergeProcessor<>(this, Integer.class) :
+                    new MergeProcessor<>(this, String.class);
             processor.merge();
         } catch (IOException e) {
             System.err.println(e.getMessage());
             System.exit(1);
         }
+
         return 0;
     }
 }

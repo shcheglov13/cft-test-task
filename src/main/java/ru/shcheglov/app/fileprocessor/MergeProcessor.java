@@ -22,7 +22,12 @@ public class MergeProcessor<T extends Comparable<T>> {
         this.validator = new DataValidator<>(comparator, elementsClass);
 
         try {
-            this.writer = new PrintWriter(app.getOutputFile());
+            if (app.getOutputFile() != null) {
+                this.writer = new PrintWriter(app.getOutputFile());
+            } else {
+                System.err.printf("Файл для записи данных не найден! Программа остановлена...%n");
+                System.exit(1);
+            }
         } catch (FileNotFoundException e) {
             System.err.printf("Файл %s%n не найден! Программа остановлена...%n", app.getOutputFile().getPath());
             System.exit(1);
@@ -82,7 +87,9 @@ public class MergeProcessor<T extends Comparable<T>> {
         T element = listOfElements.get(0);
 
         for (int i = 0; i < listOfElements.size() - 1; i++) {
-            element = comparator.compare(element, listOfElements.get(i + 1)) < 0 ? element : listOfElements.get(i + 1);
+            if (element != null) {
+                element = comparator.compare(element, listOfElements.get(i + 1)) < 0 ? element : listOfElements.get(i + 1);
+            }
         }
 
         writer.println(element);
@@ -93,25 +100,21 @@ public class MergeProcessor<T extends Comparable<T>> {
 
     private T getElement(BufferedReader reader, T prevElement) throws IOException {
         String line = reader.readLine();
+        boolean isValid;
 
-        if (elementsClass == Integer.class) {
-            boolean isValid;
-            while (!(isValid = validator.isValidElement(prevElement, line)) && reader.ready()) {
-                line = reader.readLine();
-            }
-
-            if (!isValid && !reader.ready()) {
-                return null;
-            }
-
-            return elementsClass.cast(Integer.valueOf(line));
-        }
-
-        while (!validator.isValidElement(prevElement, line)) {
+        while (!(isValid = validator.isValidElement(prevElement, line)) && reader.ready()) {
             line = reader.readLine();
         }
 
-        return elementsClass.cast(reader.readLine());
+        if (!isValid && !reader.ready()) {
+            return null;
+        }
+
+        if (elementsClass == Integer.class) {
+            return elementsClass.cast(Integer.valueOf(line));
+        }
+
+        return elementsClass.cast(line);
     }
 
     private void removeElementFromListsAndCloseReader(List<T> prevElements, List<T> currentElements, int index)

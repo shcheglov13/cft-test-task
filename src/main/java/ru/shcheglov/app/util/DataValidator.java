@@ -17,24 +17,28 @@ public class DataValidator<T> {
     }
 
     public boolean isValidElement(T prevElement, String currentElement) {
-        if (elementsClass == Integer.class) {
-            try {
-                Integer current = Integer.valueOf(currentElement);
+        try {
+            T element;
 
-                if (prevElement == null) {
-                    return true;
-                }
-
-                if (!(comparator.compare(prevElement, elementsClass.cast(current)) <= 0)) {
-                    throw new InvalidSortException("Нарушена сортировка файла! Элемент \"" + currentElement + "\" будет пропущен");
-                }
-            } catch (NumberFormatException e) {
-                System.err.printf("Элемент %s не является целым числом и будет пропущен!%n", currentElement);
-                return false;
-            } catch (InvalidSortException e) {
-                System.err.println(e.getMessage());
-                return false;
+            if (elementsClass == Integer.class) {
+                element = elementsClass.cast(Integer.valueOf(currentElement));
+            } else {
+                element = elementsClass.cast(currentElement);
             }
+
+            if (prevElement == null) {
+                return true;
+            }
+
+            if (!(comparator.compare(prevElement, elementsClass.cast(element)) <= 0)) {
+                throw new InvalidSortException("Нарушена сортировка файла! Элемент \"" + currentElement + "\" будет пропущен");
+            }
+        } catch (NumberFormatException e) {
+            System.err.printf("Элемент %s не является целым числом и будет пропущен!%n", currentElement);
+            return false;
+        } catch (InvalidSortException e) {
+            System.err.println(e.getMessage());
+            return false;
         }
 
         return true;
