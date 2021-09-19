@@ -2,10 +2,7 @@ package ru.shcheglov.app;
 
 import picocli.CommandLine;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.*;
 import java.util.concurrent.Callable;
 
 import picocli.CommandLine.Command;
@@ -36,7 +33,6 @@ public final class TxtMergerApp extends ConsoleAttributes implements Callable<In
             System.err.println(e.getMessage());
             System.exit(1);
         }
-
         return 0;
     }
 }
