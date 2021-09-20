@@ -15,10 +15,18 @@ public class ConsoleAttributes {
 
     static class DataType {
         @Option(names = INTEGER_DATA_TYPE_OPTION, required = true, description = "Integer data type option")
-        boolean isIntegerType;
+        private boolean isIntegerType;
 
         @Option(names = STRING_DATA_TYPE_OPTION, required = true, description = "String data type option")
-        boolean isStringType;
+        private boolean isStringType;
+
+        public void setIntegerType(boolean isIntegerType) {
+            this.isIntegerType = isIntegerType;
+        }
+
+        public void setStringType(boolean isStringType) {
+            this.isStringType = isStringType;
+        }
     }
 
     @ArgGroup(multiplicity = "1")
@@ -66,5 +74,23 @@ public class ConsoleAttributes {
 
     public boolean isStringType() {
         return args.isStringType;
+    }
+
+    public void setIntegerType(boolean isIntegerType) {
+        this.args = new DataType();
+        this.args.setIntegerType(isIntegerType);
+    }
+
+    public void setStringType(boolean isStringType) {
+        this.args = new DataType();
+        this.args.setStringType(isStringType);
+    }
+
+    public void setAscending(boolean isAscending) {
+        this.isAscending = isAscending;
+    }
+
+    public void setDescending(boolean isDescending) {
+        this.isDescending = isDescending;
     }
 }
